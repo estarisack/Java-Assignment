@@ -1,0 +1,203 @@
+
+package librarystore;
+
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class LibraryStore {
+
+    // Book class as an inner class
+    static class Book {
+        private String title;
+        private String author;
+        private String ISBN;
+        private boolean isAvailable;
+
+        public Book(String title, String author, String ISBN) {
+            this.title = title;
+            this.author = author;
+            this.ISBN = ISBN;
+            this.isAvailable = true;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getAuthor() {
+            return author;
+        }
+
+        public String getISBN() {
+            return ISBN;
+        }
+
+        public boolean isAvailable() {
+            return isAvailable;
+        }
+
+        public void borrow() {
+            this.isAvailable = false;
+        }
+
+        public void returnBook() {
+            this.isAvailable = true;
+        }
+
+        @Override
+        public String toString() {
+            return title + " by " + author + " (ISBN: " + ISBN + ") - " + (isAvailable ? "Available" : "Not Available");
+        }
+    }
+
+    // Library class as an inner class
+    static class Library {
+        private List<Book> books;
+
+        public Library() {
+            books = new ArrayList<>();
+        }
+
+        public void addBook(Book book) {
+            books.add(book);
+        }
+
+        public boolean removeBook(String ISBN) {
+            return books.removeIf(book -> book.getISBN().equals(ISBN));
+        }
+
+        public boolean borrowBook(String ISBN) {
+            for (Book book : books) {
+                if (book.getISBN().equals(ISBN) && book.isAvailable()) {
+                    book.borrow();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public boolean returnBook(String ISBN) {
+            for (Book book : books) {
+                if (book.getISBN().equals(ISBN) && !book.isAvailable()) {
+                    book.returnBook();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public List<Book> getBooks() {
+            return books;
+        }
+    }
+
+    private Library library;
+    private JTextArea displayArea;
+
+    public LibraryStore() {
+        library = new Library();
+        library.addBook(new Book("Java Programming", "John Doe", "123456"));
+        library.addBook(new Book("Data Structures", "Jane Smith", "234567"));
+        library.addBook(new Book("Introduction to Algorithms", "Thomas H. Cormen", "345678"));
+
+        JFrame frame = new JFrame("Library Store");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(600, 400);
+
+        JPanel panel = new JPanel(new BorderLayout());
+
+        displayArea = new JTextArea(15, 50);
+        displayArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(displayArea);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel inputPanel = new JPanel(new GridLayout(3, 2, 5, 5));
+        JTextField isbnField = new JTextField();
+        JButton borrowButton = new JButton("Borrow Book");
+        JButton returnButton = new JButton("Return Book");
+        JButton removeButton = new JButton("Remove Book");
+        JButton refreshButton = new JButton("Refresh Library");
+
+        inputPanel.add(new JLabel("Enter ISBN:"));
+        inputPanel.add(isbnField);
+        inputPanel.add(borrowButton);
+        inputPanel.add(returnButton);
+        inputPanel.add(removeButton);
+        inputPanel.add(refreshButton);
+
+        panel.add(inputPanel, BorderLayout.SOUTH);
+
+        frame.add(panel);
+
+        // Borrow Button Action Listener
+        borrowButton.addActionListener(e -> {
+            String isbn = isbnField.getText().trim();
+            if (isbn.isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "Please enter a valid ISBN.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (library.borrowBook(isbn)) {
+                JOptionPane.showMessageDialog(frame, "Book borrowed successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(frame, "Book not available or does not exist.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+            isbnField.setText(""); // Clear the ISBN field
+            updateDisplay();
+        });
+
+        // Return Button Action Listener
+        returnButton.addActionListener(e -> {
+            String isbn = isbnField.getText().trim();
+            if (isbn.isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "Please enter a valid ISBN.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (library.returnBook(isbn)) {
+                JOptionPane.showMessageDialog(frame, "Book returned successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(frame, "Book not borrowed or does not exist.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+            isbnField.setText(""); // Clear the ISBN field
+            updateDisplay();
+        });
+
+        // Remove Button Action Listener
+        removeButton.addActionListener(e -> {
+            String isbn = isbnField.getText().trim();
+            if (isbn.isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "Please enter a valid ISBN.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            boolean isRemoved = library.removeBook(isbn);
+            if (isRemoved) {
+                JOptionPane.showMessageDialog(frame, "Book removed successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(frame, "Book not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+            isbnField.setText(""); // Clear the ISBN field
+            updateDisplay();
+        });
+
+        // Refresh Button Action Listener
+        refreshButton.addActionListener(e -> updateDisplay());
+
+        updateDisplay();
+        frame.setVisible(true);
+    }
+
+    private void updateDisplay() {
+        StringBuilder sb = new StringBuilder("Library Books:\n\n");
+        for (Book book : library.getBooks()) {
+            sb.append(book).append("\n");
+        }
+        displayArea.setText(sb.toString());
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(LibraryStore::new);
+    }
+}
